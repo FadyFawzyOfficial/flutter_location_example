@@ -1,5 +1,14 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.fadyfawzy.flutter_location_example">
+
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <!-- For Android 10, it will beneficial to add ACCESS_BACKGROUND_LOCATION permission as well.
+    This permission will enable the app to keep receiving updates even when our app is running in 
+    the background:-->
+    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
+    
    <application
         android:label="flutter_location_example"
         android:name="${applicationName}"
