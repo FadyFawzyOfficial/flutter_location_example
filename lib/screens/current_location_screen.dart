@@ -33,52 +33,63 @@ class _CurrentLocationScreenState extends State<CurrentLocationScreen> {
           const SizedBox(height: 16),
           ElevatedButton(
             child: const Text('Get Location'),
-            onPressed: _getCurrentLocation,
+            onPressed: () async {
+              Position position = await _getCurrentLocation();
+              setState(() {
+                currentLocation =
+                    'Latitude: ${position.latitude}\n Longitude: ${position.longitude}';
+              });
+            },
           ),
         ],
       ),
     );
   }
 
+  /// Determine the current position of the device.
+  ///
+  /// When the location services are not enabled or permissions are denied the
+  /// 'Future' will return an error.
+
   // This function checks for permissions if the app can use the location service
   // of the device or not and then return the current location of the device.
-  void _getCurrentLocation() async {
-    // First, we need to initialize a Position instance variable that hold the
-    // location position value.
-    Position position;
+  Future<Position> _getCurrentLocation() async {
+    bool isServiceEnabled;
+    LocationPermission permission;
 
-    // Then, we can use the LocationPermission instance provided by the geolocator
-    // plugin to check if the permission.
-    LocationPermission permission = await Geolocator.checkPermission();
+    // Test if location services are enabled.
+    isServiceEnabled = await Geolocator.isLocationServiceEnabled();
 
-    // First, we check if the permission to use location is already available for
-    // the app using the checkPermission() method provided by the geolocator plugin.
-    // If not then (Permission Denied),
-    if (permission == LocationPermission.denied) {
-      // we request to grant permission using requestPermission() method.
-      permission = await Geolocator.requestPermission();
-
-      // If we manually deny the permission then, we assign permission denied
-      // value to currentLocation
-      if (permission == LocationPermission.denied) {
-        setState(() => currentLocation = 'Permission Denied');
-      }
-      // else we fetch the current location value using the getCurrentPosition
-      // method and assign it to the position variable.
-      else {
-        position = await Geolocator.getCurrentPosition(
-            desiredAccuracy: LocationAccuracy.high);
-
-        // Now, the position variable will hold the latitude and longitude value
-        // which we can set to the currentLocation variable.
-        setState(() => currentLocation =
-            'Latitude: ${position.latitude}\nLongitude: ${position.longitude}');
-      }
-    } else {
-      position = await Geolocator.getCurrentPosition(
-          desiredAccuracy: LocationAccuracy.high);
-      setState(() => currentLocation =
-          'Latitude: ${position.latitude}\nLongitude: ${position.longitude}');
+    if (!isServiceEnabled) {
+      // Location services are not enabled don't continue accessing the position
+      // and request users of the App to enable the location services.
+      debugPrint('Location services are disabled.');
+      return Future.error('Location services are disabled.');
     }
+
+    permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        // Permissions are denied, next time you could try requesting permissions again
+        // (this is also where Android's shouldShowRequestPermissionRationale
+        // returned true.) According to Android guidelines your App should show
+        // an explanatory UI now.
+        debugPrint('Location services are disabled.');
+        return Future.error('Location permissions are denied');
+      }
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      // Permissions are denied forever, handle appropriately.
+      debugPrint(
+          'Location permissions are permanently denied, we cannot request permissions.');
+      return Future.error(
+          'Location permissions are permanently denied, we cannot request permissions.');
+    }
+
+    // When we reach here, permissions are granted and we can continue accessing
+    // the position of the device.
+    return await Geolocator.getCurrentPosition();
   }
 }
