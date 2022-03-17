@@ -33,7 +33,11 @@ class _CurrentLocationScreenState extends State<CurrentLocationScreen> {
           const SizedBox(height: 16),
           ElevatedButton(
             child: const Text('Get Location'),
-            onPressed: _getCurrentLocation,
+            onPressed: () async {
+              Position? position = await _getCurrentLocation();
+              setState(() => currentLocation =
+                  _getLatitudeAndLongitude(position: position));
+            },
           ),
         ],
       ),
@@ -42,10 +46,9 @@ class _CurrentLocationScreenState extends State<CurrentLocationScreen> {
 
   // This function checks for permissions if the app can use the location service
   // of the device or not and then return the current location of the device.
-  void _getCurrentLocation() async {
+  Future<Position?> _getCurrentLocation() async {
     // First, we need to initialize a Position instance variable that hold the
     // location position value.
-    Position position;
 
     // Then, we can use the LocationPermission instance provided by the geolocator
     // plugin to check if the permission.
@@ -60,25 +63,21 @@ class _CurrentLocationScreenState extends State<CurrentLocationScreen> {
 
       // If we manually deny the permission then, we assign permission denied
       // value to currentLocation
-      if (permission == LocationPermission.denied) {
-        setState(() => currentLocation = 'Permission Denied');
-      }
-      // else we fetch the current location value using the getCurrentPosition
-      // method and assign it to the position variable.
-      else {
-        position = await Geolocator.getCurrentPosition(
-            desiredAccuracy: LocationAccuracy.high);
-
-        // Now, the position variable will hold the latitude and longitude value
-        // which we can set to the currentLocation variable.
-        setState(() => currentLocation =
-            'Latitude: ${position.latitude}\nLongitude: ${position.longitude}');
-      }
-    } else {
-      position = await Geolocator.getCurrentPosition(
-          desiredAccuracy: LocationAccuracy.high);
-      setState(() => currentLocation =
-          'Latitude: ${position.latitude}\nLongitude: ${position.longitude}');
+      if (permission == LocationPermission.denied) return null;
     }
+
+    // else we fetch the current location value using the getCurrentPosition
+    // method and assign it to returned position value.
+
+    // Now, returned position will hold the latitude and longitude value
+    // which we will set to the currentLocation variable.
+    return await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high);
+  }
+
+  // Return the String that demonstrates the Location Latitude & Longitude
+  String _getLatitudeAndLongitude({required Position? position}) {
+    if (position == null) return 'Permission Denied';
+    return 'Latitude: ${position.latitude}\nLongitude: ${position.longitude}';
   }
 }
